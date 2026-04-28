@@ -1,0 +1,20 @@
+{
+  "id": "b6a8283a-6696-4b64-a6be-a91bd5816332",
+  "type": "own_article",
+  "fullName": "Тест Пайдаланушы",
+  "phone": "+77001234567",
+  "email": "test@test.kz",
+  "workplace": "Nr1 мектеп",
+  "position": "Mugalim",
+  "subject": "Matematika",
+  "title": "Test makala",
+  "language": "kazakh",
+  "journalId": "j1",
+  "journalName": "Республикалық ғылыми-әдістемелік журналы \"Жаңа Қазақстанның Ustazalemi\"",
+  "fileUrl": null,
+  "textContent": null,
+  "extraComment": null,
+  "price": 3000,
+  "status": "waiting_payment",
+  "createdAt": "2026-04-28T08:27:34.758Z"
+}

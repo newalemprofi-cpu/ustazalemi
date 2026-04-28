@@ -1,0 +1,20 @@
+{
+  "id": "1f37d915-7797-4e95-b1f9-725791a7b915",
+  "type": "own_article",
+  "fullName": "Test User",
+  "phone": "+77001234567",
+  "email": "t@t.kz",
+  "workplace": "School",
+  "position": "Teacher",
+  "subject": "Math",
+  "title": "Test Article Title",
+  "language": "kazakh",
+  "journalId": "j3",
+  "journalName": "Халықаралық ғылыми-әдістемелік журналы \"Mentor Ustaz\"",
+  "fileUrl": null,
+  "textContent": null,
+  "extraComment": null,
+  "price": 3000,
+  "status": "waiting_payment",
+  "createdAt": "2026-04-28T10:04:19.716Z"
+}

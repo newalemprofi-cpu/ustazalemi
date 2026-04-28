@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(ADMIN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Journal {
+  id          String       @id @default(cuid())
+  name        String
+  type        JournalType
+  description String?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  submissions Submission[]
+  articles    Article[]
+}
+
+model Submission {
+  id                String           @id @default(cuid())
+  type              SubmissionType
+  fullName          String
+  phone             String
+  email             String
+  workplace         String
+  position          String
+  subject           String
+  title             String
+  language          ArticleLanguage
+  audience          String?
+  journalId         String
+  journal           Journal          @relation(fields: [journalId], references: [id])
+  fileUrl           String?
+  textContent       String?          @db.Text
+  extraComment      String?          @db.Text
+  price             Int
+  status            SubmissionStatus @default(waiting_payment)
+  whatsappClickedAt DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  article           Article?
+}
+
+model Article {
+  id           String          @id @default(cuid())
+  submissionId String          @unique
+  submission   Submission      @relation(fields: [submissionId], references: [id])
+  authorName   String
+  title        String
+  content      String          @db.Text
+  journalId    String
+  journal      Journal         @relation(fields: [journalId], references: [id])
+  language     ArticleLanguage
+  slug         String          @unique
+  publishedAt  DateTime        @default(now())
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  certificate  Certificate?
+}
+
+model Certificate {
+  id                String   @id @default(cuid())
+  articleId         String   @unique
+  article           Article  @relation(fields: [articleId], references: [id])
+  certificateNumber String   @unique
+  qrCodeUrl         String?
+  pdfUrl            String?
+  issuedAt          DateTime @default(now())
+  isValid           Boolean  @default(true)
+  createdAt         DateTime @default(now())
+}
+
+model Settings {
+  id                 String   @id @default(cuid())
+  kaspiPaymentLink   String   @default("https://pay.kaspi.kz/pay/h2f46ids")
+  whatsappBot        String   @default("87001810121")
+  whatsappSupport    String   @default("87001810131")
+  publishPrice       Int      @default(3000)
+  editorServicePrice Int      @default(5000)
+  updatedAt          DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  MODERATOR
+}
+
+enum JournalType {
+  REPUBLICAN
+  INTERNATIONAL
+}
+
+enum SubmissionType {
+  own_article
+  editor_service
+}
+
+enum SubmissionStatus {
+  draft
+  waiting_payment
+  sent_to_whatsapp
+  processing
+  published
+  cancelled
+  failed
+}
+
+enum ArticleLanguage {
+  kazakh
+  russian
+  english
+}

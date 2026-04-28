@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-primary: #1565c0;
+  --color-primary-dark: #0d47a1;
+  --color-primary-light: #1976d2;
+  --color-secondary: #1e88e5;
+  --color-accent: #f5a623;
+  --color-accent-light: #ffc107;
+  --color-blue-soft: #e3f2fd;
+  --color-blue-mid: #bbdefb;
+  --color-background: #f8fafc;
+  --color-surface: #ffffff;
+  --color-text: #1a2332;
+  --color-text-muted: #64748b;
+  --color-border: #e2e8f0;
+  --color-success: #16a34a;
+  --color-error: #dc2626;
+  --color-warning: #d97706;
+
+  --font-sans: var(--font-geist-sans), "Segoe UI", Arial, sans-serif;
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, #1565c0 0%, #1976d2 50%, #1e88e5 100%);
+}
+
+.gradient-hero {
+  background: linear-gradient(160deg, #0d47a1 0%, #1565c0 40%, #1976d2 100%);
+}
+
+.card-shadow {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(21,101,192,0.08);
+}
+
+.card-shadow-hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1), 0 8px 32px rgba(21,101,192,0.15);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #1565c0, #1e88e5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

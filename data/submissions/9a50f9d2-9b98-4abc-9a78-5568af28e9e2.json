@@ -1,0 +1,20 @@
+{
+  "id": "9a50f9d2-9b98-4abc-9a78-5568af28e9e2",
+  "type": "own_article",
+  "fullName": "Yerkin Aitkaliyev",
+  "phone": "+77751980971",
+  "email": "meh.89@mail.ru",
+  "workplace": "43",
+  "position": "музыкант",
+  "subject": "музыка",
+  "title": "Преимущества игры на фортепиано",
+  "language": "kazakh",
+  "journalId": "j2",
+  "journalName": "Республикалық ғылыми-әдістемелік журналы \"Болашаққа Aqniet-пен бірге\"",
+  "fileUrl": "/uploads/1777367503231-8254ae135c3d.docx",
+  "textContent": null,
+  "extraComment": null,
+  "price": 3000,
+  "status": "waiting_payment",
+  "createdAt": "2026-04-28T09:11:43.243Z"
+}

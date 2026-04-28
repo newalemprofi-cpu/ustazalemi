@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ustazalemi
+      POSTGRES_PASSWORD: ustazalemi_pass
+      POSTGRES_DB: ustazalemi
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ustazalemi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://ustazalemi:ustazalemi_pass@db:5432/ustazalemi
+      JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@ustazalemi.kz}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      KASPI_PAYMENT_LINK: ${KASPI_PAYMENT_LINK:-https://pay.kaspi.kz/pay/h2f46ids}
+      WHATSAPP_BOT: ${WHATSAPP_BOT:-87001810121}
+      WHATSAPP_SUPPORT: ${WHATSAPP_SUPPORT:-87001810131}
+      PUBLISH_PRICE: ${PUBLISH_PRICE:-3000}
+      EDITOR_SERVICE_PRICE: ${EDITOR_SERVICE_PRICE:-5000}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://ustazalemi.kz}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/public/uploads
+
+volumes:
+  postgres_data:
+  uploads:
