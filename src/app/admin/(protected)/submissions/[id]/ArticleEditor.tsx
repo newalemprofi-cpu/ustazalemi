@@ -2,42 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw, Save, CheckCircle2, Loader2 } from "lucide-react";
-
-// Duplicated from src/lib/submissions.ts — must stay in sync (pure function, no Node imports)
-function buildArticleContent(s: {
-  title: string;
-  fullName: string;
-  workplace: string;
-  position: string;
-  subject: string;
-  journalName: string;
-  language: string;
-  textContent?: string | null;
-}): string {
-  const lang =
-    s.language === "kazakh" ? "Қазақ тілі"
-    : s.language === "russian" ? "Орыс тілі"
-    : "English";
-
-  const lines = [
-    s.title,
-    "",
-    `Автор: ${s.fullName}`,
-    `Жұмыс орны: ${s.workplace}`,
-    `Лауазымы: ${s.position}`,
-    `Пән: ${s.subject}`,
-    "",
-    `Журнал: ${s.journalName}`,
-    `Тіл: ${lang}`,
-  ];
-
-  if (s.textContent) {
-    lines.push("", "---", "", s.textContent);
-  }
-
-  return lines.join("\n");
-}
+import { RefreshCw, Save, CheckCircle2, Loader2, Sparkles } from "lucide-react";
 
 type SubmissionFields = {
   title: string;
@@ -67,12 +32,22 @@ export default function ArticleEditor({
 }) {
   const [content, setContent] = useState(initialContent);
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [saved, setSaved] = useState(false);
   const router = useRouter();
 
-  function handleRegenerate() {
-    setContent(buildArticleContent(fields));
+  async function handleGenerate() {
+    setGenerating(true);
+    try {
+      const res = await fetch(`/api/submissions/${id}/generate`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setContent(data.articleContent);
+      }
+    } finally {
+      setGenerating(false);
+    }
   }
 
   async function handleSave() {
@@ -89,7 +64,6 @@ export default function ArticleEditor({
 
   async function handlePublish() {
     setPublishing(true);
-    // Save content first, then publish
     await fetch(`/api/submissions/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -110,25 +84,33 @@ export default function ArticleEditor({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <button
-          onClick={handleRegenerate}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium hover:bg-gray-200 transition-colors"
+          onClick={handleGenerate}
+          disabled={generating}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-50 border border-purple-200 text-purple-700 text-xs font-medium hover:bg-purple-100 disabled:opacity-50 transition-colors"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
-          Мақала мәтінін қайта дайындау
+          {generating ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Sparkles className="w-3.5 h-3.5" />
+          )}
+          {generating ? "AI жасауда..." : "Мақала мәтінін қайта дайындау"}
         </button>
+        {generating && (
+          <span className="text-xs text-gray-400">OpenAI мақала жасауда, күте тұрыңыз…</span>
+        )}
       </div>
 
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        rows={14}
+        rows={16}
         className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
       />
 
       <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || generating}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 disabled:opacity-50 transition-colors"
         >
           {saving ? (
@@ -144,7 +126,7 @@ export default function ArticleEditor({
         {!isPublished && (
           <button
             onClick={handlePublish}
-            disabled={publishing}
+            disabled={publishing || generating}
             className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-green-700 text-white text-xs font-semibold hover:bg-green-800 disabled:opacity-50 transition-colors"
           >
             {publishing ? (
@@ -169,15 +151,11 @@ export default function ArticleEditor({
           <p className="font-semibold text-green-800 mb-2">Клиентке жіберуге арналған сілтемелер:</p>
           <p className="text-green-700">
             Мақалаңыз жарияланды:{" "}
-            <span className="font-mono text-green-900">
-              {siteUrl}/article/{articleSlug}
-            </span>
+            <span className="font-mono text-green-900">{siteUrl}/article/{articleSlug}</span>
           </p>
           <p className="text-green-700">
             Сертификатыңыз дайын:{" "}
-            <span className="font-mono text-green-900">
-              {siteUrl}/certificate/{certificateId}
-            </span>
+            <span className="font-mono text-green-900">{siteUrl}/certificate/{certificateId}</span>
           </p>
         </div>
       )}

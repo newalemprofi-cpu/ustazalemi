@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { writeFile, mkdir, readFile } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
-import { articleSlugFor, certIdFor, buildArticleContent, DATA_DIR } from "@/lib/submissions";
+import { articleSlugFor, certIdFor, DATA_DIR } from "@/lib/submissions";
+import { generateArticleWithAI } from "@/lib/generateArticle";
 
 const JOURNALS = [
   { id: "j1", name: 'Республикалық ғылыми-әдістемелік журналы "Жаңа Қазақстанның Ustazalemi"' },
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
     const id = crypto.randomUUID();
     const articleSlug = articleSlugFor(id);
     const certificateId = certIdFor(id);
-    const articleContent = buildArticleContent({
+    const articleContent = await generateArticleWithAI({
       title, fullName, workplace, position, subject, journalName, language, textContent,
     });
 
