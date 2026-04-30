@@ -1,48 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest } from "next/server";
-import { readdir, readFile } from "fs/promises";
-import path from "path";
+import { findByCertId } from "@/lib/submissions";
 import { formatDate, getLanguageLabel } from "@/lib/utils";
-
-const DATA_DIR = path.join(process.cwd(), "data", "submissions");
-
-type Submission = {
-  id: string;
-  fullName: string;
-  title: string;
-  language: string;
-  journalName: string;
-  status: string;
-  createdAt: string;
-  certificateNumber?: string;
-};
-
-function stableNumber(id: string): string {
-  return `CERT-${id.slice(0, 8).toUpperCase()}`;
-}
-
-async function findByCertId(certId: string): Promise<Submission | null> {
-  let files: string[];
-  try {
-    files = await readdir(DATA_DIR);
-  } catch {
-    return null;
-  }
-  const upper = certId.toUpperCase();
-  for (const f of files) {
-    if (!f.endsWith(".json")) continue;
-    try {
-      const raw = await readFile(path.join(DATA_DIR, f), "utf-8");
-      const sub = JSON.parse(raw) as Submission;
-      if (sub.status !== "published" && sub.status !== "certificate_generated") continue;
-      const certNum = sub.certificateNumber || stableNumber(sub.id);
-      if (certNum.toUpperCase() === upper) return sub;
-    } catch {
-      continue;
-    }
-  }
-  return null;
-}
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -50,15 +9,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const sub = await findByCertId(id);
   if (!sub) return Response.json({ error: "Табылмады" }, { status: 404 });
 
-  const certNumber = sub.certificateNumber || stableNumber(sub.id);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ustazalemi.kz";
-  const verifyUrl = `${siteUrl}/verify?number=${certNumber}`;
+  const verifyUrl = `${siteUrl}/verify?number=${sub.certificateId}`;
+  const publishedDate = formatDate(sub.publishedAt || sub.createdAt);
 
   const html = `<!DOCTYPE html>
 <html lang="kk">
 <head>
   <meta charset="UTF-8" />
-  <title>Сертификат — ${certNumber}</title>
+  <title>Сертификат — ${sub.certificateId}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; background: #f0f4ff; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
@@ -103,15 +62,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       <div class="grid">
         <div class="grid-item"><p>Журнал</p><span>${sub.journalName}</span></div>
         <div class="grid-item"><p>Тіл</p><span>${getLanguageLabel(sub.language)}</span></div>
-        <div class="grid-item"><p>Жариялану күні</p><span>${formatDate(sub.createdAt)}</span></div>
-        <div class="grid-item"><p>Сертификат берілген</p><span>${formatDate(sub.createdAt)}</span></div>
+        <div class="grid-item"><p>Жариялану күні</p><span>${publishedDate}</span></div>
+        <div class="grid-item"><p>Сертификат берілген</p><span>${publishedDate}</span></div>
       </div>
       <div class="footer-row">
         <div>
-          <div class="cert-num">${certNumber}</div>
+          <div class="cert-num">${sub.certificateId}</div>
           <div class="verify">Тексеру: ${verifyUrl}</div>
         </div>
-        <div class="badge">✓ Жарамды</div>
+        <div class="badge">&#10003; Жарамды</div>
       </div>
     </div>
     <div class="footer">
@@ -125,7 +84,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   return new Response(html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
-      "Content-Disposition": `inline; filename="certificate-${certNumber}.html"`,
+      "Content-Disposition": `inline; filename="certificate-${sub.certificateId}.html"`,
     },
   });
 }

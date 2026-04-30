@@ -5,9 +5,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, User, FileText, BookOpen, Clock } from "lucide-react";
 import { formatDate, getStatusLabel, getStatusColor, getLanguageLabel } from "@/lib/utils";
+import { DATA_DIR, articleSlugFor, certIdFor } from "@/lib/submissions";
 import SubmissionStatusUpdater from "./SubmissionStatusUpdater";
-
-const DATA_DIR = path.join(process.cwd(), "data", "submissions");
+import ArticleEditor from "./ArticleEditor";
 
 type Submission = {
   id: string;
@@ -28,6 +28,10 @@ type Submission = {
   price: number;
   status: string;
   createdAt: string;
+  publishedAt?: string | null;
+  articleContent?: string | null;
+  articleSlug?: string;
+  certificateId?: string;
   whatsappClickedAt?: string;
 };
 
@@ -46,7 +50,11 @@ export default async function SubmissionDetailPage({
     notFound();
   }
 
-  const fields: { label: string; value: string | null | undefined }[] = [
+  const articleSlug = submission.articleSlug || articleSlugFor(submission.id);
+  const certificateId = submission.certificateId || certIdFor(submission.id);
+  const isPublished = submission.status === "published" || submission.status === "certificate_generated";
+
+  const authorFields: { label: string; value: string | null | undefined }[] = [
     { label: "Аты-жөні", value: submission.fullName },
     { label: "Телефон", value: submission.phone },
     { label: "Email", value: submission.email },
@@ -85,7 +93,7 @@ export default async function SubmissionDetailPage({
             <User className="w-4 h-4" /> Автор туралы
           </h2>
           <dl className="space-y-3">
-            {fields.map((f) => (
+            {authorFields.map((f) => (
               <div key={f.label}>
                 <dt className="text-xs text-gray-400">{f.label}</dt>
                 <dd className="text-sm font-medium text-gray-800">{f.value || "—"}</dd>
@@ -118,6 +126,10 @@ export default async function SubmissionDetailPage({
               <dt className="text-xs text-gray-400">Баға</dt>
               <dd className="text-sm font-semibold text-blue-700">{submission.price.toLocaleString()} тг</dd>
             </div>
+            <div>
+              <dt className="text-xs text-gray-400">Сертификат ID</dt>
+              <dd className="text-xs font-mono text-amber-700">{certificateId}</dd>
+            </div>
           </dl>
         </div>
 
@@ -139,6 +151,12 @@ export default async function SubmissionDetailPage({
               <dt className="text-xs text-gray-400">Жіберілген күн</dt>
               <dd className="text-sm font-medium text-gray-800">{formatDate(submission.createdAt)}</dd>
             </div>
+            {submission.publishedAt && (
+              <div>
+                <dt className="text-xs text-gray-400">Жарияланған күн</dt>
+                <dd className="text-sm font-medium text-gray-800">{formatDate(submission.publishedAt)}</dd>
+              </div>
+            )}
             {submission.whatsappClickedAt && (
               <div>
                 <dt className="text-xs text-gray-400">WhatsApp жіберілді</dt>
@@ -160,6 +178,30 @@ export default async function SubmissionDetailPage({
           <p className="text-sm text-gray-700 whitespace-pre-wrap">{submission.extraComment}</p>
         </div>
       )}
+
+      {/* Article content editor */}
+      <div className="mt-5 bg-white rounded-2xl card-shadow p-5">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
+          Мақала мәтіні
+        </h2>
+        <ArticleEditor
+          id={submission.id}
+          fields={{
+            title: submission.title,
+            fullName: submission.fullName,
+            workplace: submission.workplace,
+            position: submission.position,
+            subject: submission.subject,
+            journalName: submission.journalName,
+            language: submission.language,
+            textContent: submission.textContent,
+          }}
+          initialContent={submission.articleContent || ""}
+          isPublished={isPublished}
+          articleSlug={articleSlug}
+          certificateId={certificateId}
+        />
+      </div>
 
       {/* Status updater */}
       <div className="mt-5 bg-white rounded-2xl card-shadow p-5">

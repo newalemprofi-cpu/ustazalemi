@@ -13,7 +13,7 @@ type Article = {
   publishedAt: string;
   slug: string;
   journal: { name: string };
-  certificate: { id: string } | null;
+  certificateId?: string;
 };
 
 interface Props {
@@ -113,9 +113,9 @@ export default function ArchiveBody({
                     >
                       {t("archive.card.open")}
                     </Link>
-                    {article.certificate && (
+                    {article.certificateId && (
                       <Link
-                        href={`/certificate/${article.certificate.id}`}
+                        href={`/certificate/${article.certificateId}`}
                         className="flex items-center gap-1 px-3 py-2 rounded-lg border border-amber-300 text-amber-700 text-xs font-semibold hover:bg-amber-50 transition-colors"
                       >
                         <Award className="w-3.5 h-3.5" />

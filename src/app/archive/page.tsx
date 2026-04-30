@@ -1,12 +1,22 @@
 export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
-import { prisma } from "@/lib/prisma";
+import { loadPublished } from "@/lib/submissions";
 import ArchiveBody from "./ArchiveBody";
 
 export const metadata: Metadata = {
   title: "Архив — USTAZALEMI",
-  description: "Жарияланган макалалар архиви",
+  description: "Жарияланған мақалалар архиві",
 };
+
+const STATIC_JOURNALS = [
+  { id: "j1", name: 'Республикалық ғылыми-әдістемелік журналы "Жаңа Қазақстанның Ustazalemi"' },
+  { id: "j2", name: 'Республикалық ғылыми-әдістемелік журналы "Болашаққа Aqniet-пен бірге"' },
+  { id: "j3", name: 'Халықаралық ғылыми-әдістемелік журналы "Mentor Ustaz"' },
+  { id: "j4", name: 'Халықаралық ғылыми-әдістемелік журналы "Педагогикалық панорама идеясы"' },
+  { id: "j5", name: 'Халықаралық ғылыми-әдістемелік журналы "ILIM.KZ"' },
+];
+
+const YEARS = Array.from({ length: 5 }, (_, i) => String(new Date().getFullYear() - i));
 
 export default async function ArchivePage({
   searchParams,
@@ -14,68 +24,43 @@ export default async function ArchivePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
-  const search = typeof sp?.search === "string" ? sp.search : "";
+  const search = typeof sp?.search === "string" ? sp.search.toLowerCase() : "";
   const journalFilter = typeof sp?.journal === "string" ? sp.journal : "";
   const languageFilter = typeof sp?.language === "string" ? sp.language : "";
   const yearFilter = typeof sp?.year === "string" ? sp.year : "";
 
-  const articles = await prisma.article
-    .findMany({
-      where: {
-        AND: [
-          search
-            ? {
-                OR: [
-                  { title: { contains: search, mode: "insensitive" } },
-                  { authorName: { contains: search, mode: "insensitive" } },
-                ],
-              }
-            : {},
-          journalFilter ? { journalId: journalFilter } : {},
-          languageFilter
-            ? { language: languageFilter as "kazakh" | "russian" | "english" }
-            : {},
-          yearFilter
-            ? {
-                publishedAt: {
-                  gte: new Date(`${yearFilter}-01-01`),
-                  lte: new Date(`${yearFilter}-12-31`),
-                },
-              }
-            : {},
-        ],
-      },
-      include: { journal: true, certificate: true },
-      orderBy: { publishedAt: "desc" },
-      take: 50,
-    })
-    .catch(() => []);
+  const all = await loadPublished();
 
-  const journals = await prisma.journal
-    .findMany({ where: { isActive: true } })
-    .catch(() => []);
+  const filtered = all.filter((s) => {
+    if (search && !s.title.toLowerCase().includes(search) && !s.fullName.toLowerCase().includes(search)) {
+      return false;
+    }
+    if (journalFilter && s.journalId !== journalFilter) return false;
+    if (languageFilter && s.language !== languageFilter) return false;
+    if (yearFilter) {
+      const year = new Date(s.publishedAt || s.createdAt).getFullYear().toString();
+      if (year !== yearFilter) return false;
+    }
+    return true;
+  });
 
-  const years = Array.from({ length: 5 }, (_, i) =>
-    String(new Date().getFullYear() - i)
-  );
-
-  const serializedArticles = articles.map((a) => ({
-    id: a.id,
-    title: a.title,
-    authorName: a.authorName,
-    language: a.language,
-    publishedAt: a.publishedAt.toISOString(),
-    slug: a.slug,
-    journal: { name: a.journal.name },
-    certificate: a.certificate ? { id: a.certificate.id } : null,
+  const articles = filtered.map((s) => ({
+    id: s.id,
+    title: s.title,
+    authorName: s.fullName,
+    language: s.language,
+    publishedAt: s.publishedAt || s.createdAt,
+    slug: s.articleSlug,
+    journal: { name: s.journalName },
+    certificateId: s.certificateId,
   }));
 
   return (
     <div className="min-h-screen bg-slate-50">
       <ArchiveBody
-        articles={serializedArticles}
-        journals={journals.map((j) => ({ id: j.id, name: j.name }))}
-        years={years}
+        articles={articles}
+        journals={STATIC_JOURNALS}
+        years={YEARS}
         currentSearch={search}
         currentJournal={journalFilter}
         currentLanguage={languageFilter}

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { writeFile, mkdir, readFile } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
+import { articleSlugFor, certIdFor, buildArticleContent, DATA_DIR } from "@/lib/submissions";
 
 const JOURNALS = [
   { id: "j1", name: 'Республикалық ғылыми-әдістемелік журналы "Жаңа Қазақстанның Ustazalemi"' },
@@ -10,8 +11,6 @@ const JOURNALS = [
   { id: "j4", name: 'Халықаралық ғылыми-әдістемелік журналы "Педагогикалық панорама идеясы"' },
   { id: "j5", name: 'Халықаралық ғылыми-әдістемелік журналы "ILIM.KZ"' },
 ];
-
-const DATA_DIR = path.join(process.cwd(), "data", "submissions");
 
 export async function POST(req: NextRequest) {
   try {
@@ -56,6 +55,12 @@ export async function POST(req: NextRequest) {
     }
 
     const id = crypto.randomUUID();
+    const articleSlug = articleSlugFor(id);
+    const certificateId = certIdFor(id);
+    const articleContent = buildArticleContent({
+      title, fullName, workplace, position, subject, journalName, language, textContent,
+    });
+
     const submission = {
       id,
       type,
@@ -75,6 +80,10 @@ export async function POST(req: NextRequest) {
       price,
       status: "waiting_payment",
       createdAt: new Date().toISOString(),
+      publishedAt: null,
+      articleContent,
+      articleSlug,
+      certificateId,
     };
 
     await mkdir(DATA_DIR, { recursive: true });
