@@ -23,9 +23,9 @@ export default async function AdminSettingsPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <Settings className="w-6 h-6 text-blue-700" />
-          Ð‘Ð°Ð¿Ñ‚Ð°ÑƒÐ»Ð°Ñ€
+          Баптаулар
         </h1>
-        <p className="text-gray-500 text-sm mt-1">ÐŸÐ»Ð°Ñ‚Ñ„Ð¾Ñ€Ð¼Ð° Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð»ÐµÑ€Ñ–Ð½ Ð±Ð°ÑÒ›Ð°Ñ€Ñƒ</p>
+        <p className="text-gray-500 text-sm mt-1">Платформа параметрлерінің басқару</p>
       </div>
       <SettingsForm settings={settings} />
     </div>

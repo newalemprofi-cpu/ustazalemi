@@ -16,9 +16,9 @@ export default async function AdminArticlesPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <FileText className="w-6 h-6 text-blue-700" />
-          Ð–Ð°Ñ€Ð¸ÑÐ»Ð°Ð½Ò“Ð°Ð½ Ð¼Ð°Ò›Ð°Ð»Ð°Ð»Ð°Ñ€
+          Жарияланған мақалалар
         </h1>
-        <p className="text-gray-500 text-sm mt-1">{articles.length} Ð¼Ð°Ò›Ð°Ð»Ð°</p>
+        <p className="text-gray-500 text-sm mt-1">{articles.length} мақала</p>
       </div>
 
       <div className="bg-white rounded-2xl card-shadow overflow-hidden">
@@ -26,14 +26,14 @@ export default async function AdminArticlesPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                {["ÐÑ‚Ð°ÑƒÑ‹", "ÐÐ²Ñ‚Ð¾Ñ€", "Ð–ÑƒÑ€Ð½Ð°Ð»", "Ð¢Ñ–Ð»", "Ð¡ÐµÑ€Ñ‚Ð¸Ñ„Ð¸ÐºÐ°Ñ‚", "ÐšÒ¯Ð½Ñ–", ""].map((h) => (
+                {["Атауы", "Авторы", "Журнал", "Тіл", "Сертификат", "Күні", ""].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {articles.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400">ÐœÐ°Ò›Ð°Ð»Ð°Ð»Ð°Ñ€ Ð¶Ð¾Ò›</td></tr>
+                <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400">Мақалалар жоқ</td></tr>
               ) : (
                 articles.map((a) => (
                   <tr key={a.id} className="hover:bg-gray-50">
@@ -64,7 +64,7 @@ export default async function AdminArticlesPage() {
                     <td className="px-4 py-3">
                       <Link href={`/article/${a.slug}`} target="_blank"
                         className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100 transition-colors whitespace-nowrap">
-                        <ExternalLink className="w-3 h-3" /> ÐÑˆÑƒ
+                        <ExternalLink className="w-3 h-3" /> Ашу
                       </Link>
                     </td>
                   </tr>

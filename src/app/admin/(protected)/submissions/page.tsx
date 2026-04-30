@@ -25,9 +25,9 @@ export default async function SubmissionsPage({ searchParams }: { searchParams: 
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <ClipboardList className="w-6 h-6 text-blue-700" />
-            Ó¨Ñ‚Ñ–Ð½Ñ–Ð¼Ð´ÐµÑ€
+            Өтінімдер
           </h1>
-          <p className="text-gray-500 text-sm mt-1">{submissions.length} Ó©Ñ‚Ñ–Ð½Ñ–Ð¼</p>
+          <p className="text-gray-500 text-sm mt-1">{submissions.length} өтінім</p>
         </div>
       </div>
 
@@ -36,12 +36,12 @@ export default async function SubmissionsPage({ searchParams }: { searchParams: 
         <Filter className="w-4 h-4 text-gray-400" />
         <div className="flex flex-wrap gap-2">
           {[
-            { label: "Ð‘Ð°Ñ€Ð»Ñ‹Ò“Ñ‹", status: "" },
-            { label: "Ð¢Ó©Ð»ÐµÐ¼ ÐºÒ¯Ñ‚Ñ–Ð»ÑƒÐ´Ðµ", status: "waiting_payment" },
-            { label: "WhatsApp Ð¶Ñ–Ð±ÐµÑ€Ñ–Ð»Ð´Ñ–", status: "sent_to_whatsapp" },
-            { label: "Ó¨Ò£Ð´ÐµÐ»ÑƒÐ´Ðµ", status: "processing" },
-            { label: "Ð–Ð°Ñ€Ð¸ÑÐ»Ð°Ð½Ð´Ñ‹", status: "published" },
-            { label: "Ð‘Ð¾Ð»Ð´Ñ‹Ñ€Ñ‹Ð»Ð¼Ð°Ð´Ñ‹", status: "cancelled" },
+            { label: "Барлығы", status: "" },
+            { label: "Төлем күтіліде", status: "waiting_payment" },
+            { label: "WhatsApp жіберілді", status: "sent_to_whatsapp" },
+            { label: "Өңделуде", status: "processing" },
+            { label: "Жарияланды", status: "published" },
+            { label: "Болдырылмады", status: "cancelled" },
           ].map((f) => (
             <Link
               key={f.status}
@@ -58,9 +58,9 @@ export default async function SubmissionsPage({ searchParams }: { searchParams: 
         </div>
         <div className="flex gap-2 ml-auto">
           {[
-            { label: "Ð‘Ð°Ñ€Ð»Ñ‹Ò› Ñ‚Ð¸Ð¿", type: "" },
-            { label: "Ó¨Ð· Ð¼Ð°Ò›Ð°Ð»Ð°", type: "own_article" },
-            { label: "Ð ÐµÐ´Ð°ÐºÑ†Ð¸Ñ", type: "editor_service" },
+            { label: "Барлық түрі", type: "" },
+            { label: "Өз мақалалар", type: "own_article" },
+            { label: "Редакция", type: "editor_service" },
           ].map((f) => (
             <Link
               key={f.type}
@@ -83,7 +83,7 @@ export default async function SubmissionsPage({ searchParams }: { searchParams: 
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                {["ÐÐ²Ñ‚Ð¾Ñ€", "ÐœÐ°Ò›Ð°Ð»Ð° Ñ‚Ð°Ò›Ñ‹Ñ€Ñ‹Ð±Ñ‹", "Ð¢Ð¸Ð¿", "Ð–ÑƒÑ€Ð½Ð°Ð»", "Ð¢Ñ–Ð»", "Ð‘Ð°Ò“Ð°", "Ð¡Ñ‚Ð°Ñ‚ÑƒÑ", "ÐšÒ¯Ð½Ñ–", ""].map((h) => (
+                {["Авторы", "Мақала тақырыбы", "Түрі", "Журнал", "Тіл", "Баға", "Статусы", "Күні", ""].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     {h}
                   </th>
@@ -94,7 +94,7 @@ export default async function SubmissionsPage({ searchParams }: { searchParams: 
               {submissions.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-4 py-10 text-center text-gray-400">
-                    Ó¨Ñ‚Ñ–Ð½Ñ–Ð¼Ð´ÐµÑ€ Ð¶Ð¾Ò›
+                    Өтінімдер жоқ
                   </td>
                 </tr>
               ) : (
@@ -111,7 +111,7 @@ export default async function SubmissionsPage({ searchParams }: { searchParams: 
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                         sub.type === "own_article" ? "bg-blue-100 text-blue-800" : "bg-amber-100 text-amber-800"
                       }`}>
-                        {sub.type === "own_article" ? "Ó¨Ð· Ð¼Ð°Ò›Ð°Ð»Ð°" : "Ð ÐµÐ´Ð°ÐºÑ†Ð¸Ñ"}
+                        {sub.type === "own_article" ? "Өз мақалалар" : "Редакция"}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -121,7 +121,7 @@ export default async function SubmissionsPage({ searchParams }: { searchParams: 
                       {getLanguageLabel(sub.language)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap font-semibold text-blue-700">
-                      {sub.price.toLocaleString()} Ñ‚Ð³
+                      {sub.price.toLocaleString()} тг
                     </td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(sub.status)}`}>
@@ -136,7 +136,7 @@ export default async function SubmissionsPage({ searchParams }: { searchParams: 
                         href={`/admin/submissions/${sub.id}`}
                         className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100 transition-colors whitespace-nowrap"
                       >
-                        ÐÑˆÑƒ
+                        Ашу
                       </Link>
                     </td>
                   </tr>
