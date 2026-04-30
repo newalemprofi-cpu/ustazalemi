@@ -3,9 +3,11 @@ import { readdir, readFile } from "fs/promises";
 import path from "path";
 import { formatDate, getStatusLabel, getStatusColor } from "@/lib/utils";
 import Link from "next/link";
-import { Award } from "lucide-react";
+import { Award, ExternalLink } from "lucide-react";
+import CopyCertUrl from "./CopyCertUrl";
 
 const DATA_DIR = path.join(process.cwd(), "data", "submissions");
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://ustazalemi.kz";
 
 type Submission = {
   id: string;
@@ -13,7 +15,6 @@ type Submission = {
   title: string;
   status: string;
   createdAt: string;
-  certificateId?: string;
   certificateNumber?: string;
 };
 
@@ -65,7 +66,7 @@ export default async function AdminCertificatesPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                {["Номері", "Авторы", "Мақала", "Статусы", "Берілген күні", ""].map((h) => (
+                {["Номері", "Авторы", "Мақала", "Статусы", "Берілген күні", "Сертификат", "Клиентке жіберу"].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap"
@@ -78,19 +79,18 @@ export default async function AdminCertificatesPage() {
             <tbody className="divide-y divide-gray-50">
               {certs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-gray-400">
+                  <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
                     Сертификаттар жоқ
                   </td>
                 </tr>
               ) : (
                 certs.map((c) => {
-                  const displayNumber = c.certificateNumber || stableDisplayId(c.id);
+                  const certNumber = c.certificateNumber || stableDisplayId(c.id);
+                  const certUrl = `${SITE_URL}/certificate/${certNumber}`;
                   return (
                     <tr key={c.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">
-                        <p className="font-mono font-semibold text-blue-800 text-xs">
-                          {displayNumber}
-                        </p>
+                        <p className="font-mono font-semibold text-blue-800 text-xs">{certNumber}</p>
                       </td>
                       <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{c.fullName}</td>
                       <td className="px-4 py-3">
@@ -108,11 +108,17 @@ export default async function AdminCertificatesPage() {
                       </td>
                       <td className="px-4 py-3">
                         <Link
-                          href={`/admin/submissions/${c.id}`}
-                          className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-semibold hover:bg-amber-100 transition-colors whitespace-nowrap"
+                          href={certUrl}
+                          target="_blank"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-semibold hover:bg-amber-100 transition-colors whitespace-nowrap"
                         >
+                          <ExternalLink className="w-3 h-3" />
                           Ашу
                         </Link>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="text-xs text-gray-500 font-medium mb-0.5">Сертификатыңыз дайын:</p>
+                        <CopyCertUrl url={certUrl} />
                       </td>
                     </tr>
                   );

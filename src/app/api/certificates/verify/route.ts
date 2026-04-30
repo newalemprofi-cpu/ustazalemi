@@ -27,9 +27,7 @@ async function findByNumber(number: string): Promise<Submission | null> {
   } catch {
     return null;
   }
-
   const upper = number.toUpperCase();
-
   for (const f of files) {
     if (!f.endsWith(".json")) continue;
     try {
@@ -59,8 +57,9 @@ export async function GET(req: NextRequest) {
 
   const certNumber = sub.certificateNumber || stableNumber(sub.id);
 
+  // id is the CERT number so /certificate/[certificateId] URLs use the friendly format
   return Response.json({
-    id: sub.id,
+    id: certNumber,
     certificateNumber: certNumber,
     issuedAt: sub.createdAt,
     isValid: true,

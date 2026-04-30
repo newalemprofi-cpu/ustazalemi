@@ -1,11 +1,11 @@
 export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
-import { readFile } from "fs/promises";
+import { readdir, readFile } from "fs/promises";
 import path from "path";
 import Link from "next/link";
 import { formatDate, getLanguageLabel } from "@/lib/utils";
 import Breadcrumb from "@/components/ui/Breadcrumb";
-import CertificateDownload from "./CertificateDownload";
+import CertificatePrintButton from "./CertificatePrintButton";
 import { Award, Shield, CheckCircle, BookOpen, Calendar, Globe } from "lucide-react";
 
 const DATA_DIR = path.join(process.cwd(), "data", "submissions");
@@ -25,6 +25,29 @@ function stableNumber(id: string): string {
   return `CERT-${id.slice(0, 8).toUpperCase()}`;
 }
 
+async function findByCertId(certId: string): Promise<Submission | null> {
+  let files: string[];
+  try {
+    files = await readdir(DATA_DIR);
+  } catch {
+    return null;
+  }
+  const upper = certId.toUpperCase();
+  for (const f of files) {
+    if (!f.endsWith(".json")) continue;
+    try {
+      const raw = await readFile(path.join(DATA_DIR, f), "utf-8");
+      const sub = JSON.parse(raw) as Submission;
+      if (sub.status !== "published" && sub.status !== "certificate_generated") continue;
+      const certNum = sub.certificateNumber || stableNumber(sub.id);
+      if (certNum.toUpperCase() === upper) return sub;
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
 export default async function CertificatePage({
   params,
 }: {
@@ -32,17 +55,8 @@ export default async function CertificatePage({
 }) {
   const { certificateId } = await params;
 
-  let sub: Submission;
-  try {
-    const raw = await readFile(path.join(DATA_DIR, `${certificateId}.json`), "utf-8");
-    sub = JSON.parse(raw);
-  } catch {
-    notFound();
-  }
-
-  if (sub.status !== "published" && sub.status !== "certificate_generated") {
-    notFound();
-  }
+  const sub = await findByCertId(certificateId);
+  if (!sub) notFound();
 
   const certNumber = sub.certificateNumber || stableNumber(sub.id);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ustazalemi.kz";
@@ -64,12 +78,11 @@ export default async function CertificatePage({
       </div>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Certificate card (printable) */}
+        {/* Printable certificate card */}
         <div
           id="certificate-card"
-          className="bg-white rounded-3xl overflow-hidden card-shadow mb-6 border-4 border-blue-700"
+          className="bg-white rounded-3xl overflow-hidden card-shadow mb-6 border-4 border-blue-700 print:border-2 print:rounded-none print:shadow-none"
         >
-          {/* Top accent */}
           <div className="gradient-primary px-8 py-6 text-white text-center">
             <div className="flex items-center justify-center gap-3 mb-3">
               <BookOpen className="w-8 h-8 text-amber-300" />
@@ -79,7 +92,6 @@ export default async function CertificatePage({
           </div>
 
           <div className="px-8 py-8">
-            {/* Certificate title */}
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-amber-100 border border-amber-300 mb-4">
                 <Award className="w-5 h-5 text-amber-600" />
@@ -88,50 +100,27 @@ export default async function CertificatePage({
               <p className="text-gray-500 text-sm">Осы сертификат берілді</p>
             </div>
 
-            {/* Author name */}
             <div className="text-center mb-8">
               <p className="text-4xl font-black text-blue-800 tracking-tight">{sub.fullName}</p>
               <div className="mt-3 w-24 h-1 bg-amber-400 mx-auto rounded-full" />
             </div>
 
-            {/* Article info */}
             <div className="bg-blue-50 rounded-2xl p-6 mb-6">
               <p className="text-center text-gray-500 text-xs mb-2 uppercase tracking-wider">Мақала</p>
               <p className="text-center font-bold text-gray-900 text-lg leading-snug">{sub.title}</p>
             </div>
 
-            {/* Details grid */}
             <div className="grid grid-cols-2 gap-4 mb-8">
-              <DetailItem
-                icon={<BookOpen className="w-4 h-4" />}
-                label="Журнал"
-                value={sub.journalName}
-                small
-              />
-              <DetailItem
-                icon={<Globe className="w-4 h-4" />}
-                label="Тіл"
-                value={getLanguageLabel(sub.language)}
-              />
-              <DetailItem
-                icon={<Calendar className="w-4 h-4" />}
-                label="Жариялану күні"
-                value={formatDate(sub.createdAt)}
-              />
-              <DetailItem
-                icon={<Calendar className="w-4 h-4" />}
-                label="Сертификат берілген"
-                value={formatDate(sub.createdAt)}
-              />
+              <DetailItem icon={<BookOpen className="w-4 h-4" />} label="Журнал" value={sub.journalName} small />
+              <DetailItem icon={<Globe className="w-4 h-4" />} label="Тіл" value={getLanguageLabel(sub.language)} />
+              <DetailItem icon={<Calendar className="w-4 h-4" />} label="Жариялану күні" value={formatDate(sub.createdAt)} />
+              <DetailItem icon={<Calendar className="w-4 h-4" />} label="Сертификат берілген" value={formatDate(sub.createdAt)} />
             </div>
 
-            {/* Certificate number & status */}
             <div className="flex items-center justify-between border-t border-gray-100 pt-6">
               <div>
                 <p className="text-xs text-gray-400 mb-1">Сертификат нөмірі</p>
-                <p className="font-mono font-bold text-blue-800 text-lg tracking-widest">
-                  {certNumber}
-                </p>
+                <p className="font-mono font-bold text-blue-800 text-lg tracking-widest">{certNumber}</p>
               </div>
               <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 text-green-800 text-xs font-bold">
                 <CheckCircle className="w-3.5 h-3.5" />
@@ -139,7 +128,6 @@ export default async function CertificatePage({
               </span>
             </div>
 
-            {/* Verify URL */}
             <div className="mt-4 p-3 bg-gray-50 rounded-xl flex items-center gap-2">
               <Shield className="w-4 h-4 text-blue-600 shrink-0" />
               <p className="text-xs text-gray-500 break-all">
@@ -148,16 +136,15 @@ export default async function CertificatePage({
             </div>
           </div>
 
-          {/* Footer */}
           <div className="bg-blue-900 px-8 py-4 flex items-center justify-between">
             <p className="text-blue-200 text-xs">© USTAZALEMI — ustazalemi.kz</p>
             <p className="text-blue-300 text-xs">Ресми жариялым платформасы</p>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="grid sm:grid-cols-2 gap-3">
-          <CertificateDownload certificateId={certificateId} />
+        {/* Actions — hidden on print */}
+        <div className="grid sm:grid-cols-2 gap-3 print:hidden">
+          <CertificatePrintButton />
           <Link
             href={`/verify?number=${certNumber}`}
             className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-blue-700 text-blue-700 font-semibold text-sm hover:bg-blue-50 transition-colors"
