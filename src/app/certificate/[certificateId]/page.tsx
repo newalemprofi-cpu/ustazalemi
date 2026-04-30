@@ -1,26 +1,52 @@
+export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
+import { readFile } from "fs/promises";
+import path from "path";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
 import { formatDate, getLanguageLabel } from "@/lib/utils";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import CertificateDownload from "./CertificateDownload";
-import { Award, Shield, CheckCircle, BookOpen, Calendar, User, Globe } from "lucide-react";
+import { Award, Shield, CheckCircle, BookOpen, Calendar, Globe } from "lucide-react";
 
-export default async function CertificatePage({ params }: { params: Promise<{ certificateId: string }> }) {
+const DATA_DIR = path.join(process.cwd(), "data", "submissions");
+
+type Submission = {
+  id: string;
+  fullName: string;
+  title: string;
+  language: string;
+  journalName: string;
+  status: string;
+  createdAt: string;
+  certificateNumber?: string;
+};
+
+function stableNumber(id: string): string {
+  return `CERT-${id.slice(0, 8).toUpperCase()}`;
+}
+
+export default async function CertificatePage({
+  params,
+}: {
+  params: Promise<{ certificateId: string }>;
+}) {
   const { certificateId } = await params;
 
-  const cert = await prisma.certificate.findUnique({
-    where: { id: certificateId },
-    include: {
-      article: {
-        include: { journal: true },
-      },
-    },
-  }).catch(() => null);
+  let sub: Submission;
+  try {
+    const raw = await readFile(path.join(DATA_DIR, `${certificateId}.json`), "utf-8");
+    sub = JSON.parse(raw);
+  } catch {
+    notFound();
+  }
 
-  if (!cert) notFound();
+  if (sub.status !== "published" && sub.status !== "certificate_generated") {
+    notFound();
+  }
 
-  const verifyUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "https://ustazalemi.kz"}/verify?number=${cert.certificateNumber}`;
+  const certNumber = sub.certificateNumber || stableNumber(sub.id);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ustazalemi.kz";
+  const verifyUrl = `${siteUrl}/verify?number=${certNumber}`;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -64,24 +90,39 @@ export default async function CertificatePage({ params }: { params: Promise<{ ce
 
             {/* Author name */}
             <div className="text-center mb-8">
-              <p className="text-4xl font-black text-blue-800 tracking-tight">{cert.article.authorName}</p>
+              <p className="text-4xl font-black text-blue-800 tracking-tight">{sub.fullName}</p>
               <div className="mt-3 w-24 h-1 bg-amber-400 mx-auto rounded-full" />
             </div>
 
             {/* Article info */}
             <div className="bg-blue-50 rounded-2xl p-6 mb-6">
               <p className="text-center text-gray-500 text-xs mb-2 uppercase tracking-wider">Мақала</p>
-              <p className="text-center font-bold text-gray-900 text-lg leading-snug">
-                {cert.article.title}
-              </p>
+              <p className="text-center font-bold text-gray-900 text-lg leading-snug">{sub.title}</p>
             </div>
 
             {/* Details grid */}
             <div className="grid grid-cols-2 gap-4 mb-8">
-              <DetailItem icon={<BookOpen className="w-4 h-4" />} label="Журнал" value={cert.article.journal.name} small />
-              <DetailItem icon={<Globe className="w-4 h-4" />} label="Тіл" value={getLanguageLabel(cert.article.language)} />
-              <DetailItem icon={<Calendar className="w-4 h-4" />} label="Жариялану күні" value={formatDate(cert.article.publishedAt)} />
-              <DetailItem icon={<Calendar className="w-4 h-4" />} label="Сертификат берілген" value={formatDate(cert.issuedAt)} />
+              <DetailItem
+                icon={<BookOpen className="w-4 h-4" />}
+                label="Журнал"
+                value={sub.journalName}
+                small
+              />
+              <DetailItem
+                icon={<Globe className="w-4 h-4" />}
+                label="Тіл"
+                value={getLanguageLabel(sub.language)}
+              />
+              <DetailItem
+                icon={<Calendar className="w-4 h-4" />}
+                label="Жариялану күні"
+                value={formatDate(sub.createdAt)}
+              />
+              <DetailItem
+                icon={<Calendar className="w-4 h-4" />}
+                label="Сертификат берілген"
+                value={formatDate(sub.createdAt)}
+              />
             </div>
 
             {/* Certificate number & status */}
@@ -89,21 +130,13 @@ export default async function CertificatePage({ params }: { params: Promise<{ ce
               <div>
                 <p className="text-xs text-gray-400 mb-1">Сертификат нөмірі</p>
                 <p className="font-mono font-bold text-blue-800 text-lg tracking-widest">
-                  {cert.certificateNumber}
+                  {certNumber}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                {cert.isValid ? (
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 text-green-800 text-xs font-bold">
-                    <CheckCircle className="w-3.5 h-3.5" />
-                    Жарамды
-                  </span>
-                ) : (
-                  <span className="px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 text-xs font-bold">
-                    Жарамсыз
-                  </span>
-                )}
-              </div>
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 text-green-800 text-xs font-bold">
+                <CheckCircle className="w-3.5 h-3.5" />
+                Жарамды
+              </span>
             </div>
 
             {/* Verify URL */}
@@ -123,26 +156,14 @@ export default async function CertificatePage({ params }: { params: Promise<{ ce
         </div>
 
         {/* Actions */}
-        <div className="grid sm:grid-cols-2 gap-3 mb-6">
+        <div className="grid sm:grid-cols-2 gap-3">
           <CertificateDownload certificateId={certificateId} />
           <Link
-            href={`/verify?number=${cert.certificateNumber}`}
+            href={`/verify?number=${certNumber}`}
             className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-blue-700 text-blue-700 font-semibold text-sm hover:bg-blue-50 transition-colors"
           >
             <Shield className="w-4 h-4" />
             Сертификатты тексеру
-          </Link>
-        </div>
-
-        {/* Article link */}
-        <div className="bg-white rounded-2xl p-5 card-shadow text-center">
-          <p className="text-gray-500 text-sm mb-3">Толық мақаланы оқу</p>
-          <Link
-            href={`/article/${cert.article.slug}`}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-700 text-white font-semibold text-sm hover:bg-blue-800 transition-colors"
-          >
-            <BookOpen className="w-4 h-4" />
-            Мақалаға өту
           </Link>
         </div>
       </div>
@@ -151,16 +172,24 @@ export default async function CertificatePage({ params }: { params: Promise<{ ce
 }
 
 function DetailItem({
-  icon, label, value, small,
+  icon,
+  label,
+  value,
+  small,
 }: {
-  icon: React.ReactNode; label: string; value: string; small?: boolean;
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  small?: boolean;
 }) {
   return (
     <div className="flex items-start gap-2">
       <div className="text-blue-500 mt-0.5 shrink-0">{icon}</div>
       <div>
         <p className="text-xs text-gray-400">{label}</p>
-        <p className={`font-semibold text-gray-900 leading-snug ${small ? "text-xs" : "text-sm"}`}>{value}</p>
+        <p className={`font-semibold text-gray-900 leading-snug ${small ? "text-xs" : "text-sm"}`}>
+          {value}
+        </p>
       </div>
     </div>
   );

@@ -66,7 +66,7 @@ export default function VerifyPage() {
             </div>
             <div>
               <h2 className="font-bold text-gray-900 text-lg">Сертификат нөмірі</h2>
-              <p className="text-gray-500 text-sm">UA-XXXX-XXXXXX форматы</p>
+              <p className="text-gray-500 text-sm">CERT-XXXXXXXX форматы</p>
             </div>
           </div>
 
@@ -75,7 +75,7 @@ export default function VerifyPage() {
               type="text"
               value={certNumber}
               onChange={(e) => setCertNumber(e.target.value)}
-              placeholder="UA-2024-ABCDEF"
+              placeholder="CERT-B6A8283A"
               className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono tracking-wider uppercase"
             />
             <button

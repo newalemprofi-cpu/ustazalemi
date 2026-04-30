@@ -1,27 +1,50 @@
 export const dynamic = "force-dynamic";
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { readFile } from "fs/promises";
+import path from "path";
 import { formatDate, getLanguageLabel } from "@/lib/utils";
+
+const DATA_DIR = path.join(process.cwd(), "data", "submissions");
+
+type Submission = {
+  id: string;
+  fullName: string;
+  title: string;
+  language: string;
+  journalName: string;
+  status: string;
+  createdAt: string;
+  certificateNumber?: string;
+};
+
+function stableNumber(id: string): string {
+  return `CERT-${id.slice(0, 8).toUpperCase()}`;
+}
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const cert = await prisma.certificate.findUnique({
-    where: { id },
-    include: { article: { include: { journal: true } } },
-  });
+  let sub: Submission;
+  try {
+    const raw = await readFile(path.join(DATA_DIR, `${id}.json`), "utf-8");
+    sub = JSON.parse(raw);
+  } catch {
+    return Response.json({ error: "Табылмады" }, { status: 404 });
+  }
 
-  if (!cert) return Response.json({ error: "Табылмады" }, { status: 404 });
+  if (sub.status !== "published" && sub.status !== "certificate_generated") {
+    return Response.json({ error: "Табылмады" }, { status: 404 });
+  }
 
-  // Generate simple HTML-based PDF using browser print (return HTML for now)
+  const certNumber = sub.certificateNumber || stableNumber(sub.id);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ustazalemi.kz";
-  const verifyUrl = `${siteUrl}/verify?number=${cert.certificateNumber}`;
+  const verifyUrl = `${siteUrl}/verify?number=${certNumber}`;
 
   const html = `<!DOCTYPE html>
 <html lang="kk">
 <head>
   <meta charset="UTF-8" />
-  <title>Сертификат — ${cert.certificateNumber}</title>
+  <title>Сертификат — ${certNumber}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; background: #f0f4ff; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
@@ -51,30 +74,30 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 <body>
   <div class="cert">
     <div class="header">
-      <h1>📚 USTAZALEMI</h1>
+      <h1>USTAZALEMI</h1>
       <p>Педагогтарға арналған платформа</p>
     </div>
     <div class="body">
       <div class="cert-title">Жариялым сертификаты</div>
       <div class="cert-subtitle">Осы сертификат берілді</div>
-      <div class="author">${cert.article.authorName}</div>
+      <div class="author">${sub.fullName}</div>
       <div class="divider"></div>
       <div class="article-box">
         <p>Мақала</p>
-        <h2>${cert.article.title}</h2>
+        <h2>${sub.title}</h2>
       </div>
       <div class="grid">
-        <div class="grid-item"><p>Журнал</p><span>${cert.article.journal.name}</span></div>
-        <div class="grid-item"><p>Тіл</p><span>${getLanguageLabel(cert.article.language)}</span></div>
-        <div class="grid-item"><p>Жариялану күні</p><span>${formatDate(cert.article.publishedAt)}</span></div>
-        <div class="grid-item"><p>Сертификат берілген</p><span>${formatDate(cert.issuedAt)}</span></div>
+        <div class="grid-item"><p>Журнал</p><span>${sub.journalName}</span></div>
+        <div class="grid-item"><p>Тіл</p><span>${getLanguageLabel(sub.language)}</span></div>
+        <div class="grid-item"><p>Жариялану күні</p><span>${formatDate(sub.createdAt)}</span></div>
+        <div class="grid-item"><p>Сертификат берілген</p><span>${formatDate(sub.createdAt)}</span></div>
       </div>
       <div class="footer-row">
         <div>
-          <div class="cert-num">${cert.certificateNumber}</div>
+          <div class="cert-num">${certNumber}</div>
           <div class="verify">Тексеру: ${verifyUrl}</div>
         </div>
-        <div class="badge">${cert.isValid ? "✓ Жарамды" : "Жарамсыз"}</div>
+        <div class="badge">✓ Жарамды</div>
       </div>
     </div>
     <div class="footer">
@@ -88,7 +111,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   return new Response(html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
-      "Content-Disposition": `inline; filename="certificate-${cert.certificateNumber}.html"`,
+      "Content-Disposition": `inline; filename="certificate-${certNumber}.html"`,
     },
   });
 }
