@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { clearSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 

@@ -1,23 +1,64 @@
-﻿export const dynamic = 'force-dynamic'
-import { prisma } from "@/lib/prisma";
+export const dynamic = "force-dynamic";
+import { readdir, readFile } from "fs/promises";
+import path from "path";
 import { formatDate, getStatusLabel, getStatusColor, getLanguageLabel } from "@/lib/utils";
 import Link from "next/link";
 import { ClipboardList, Filter } from "lucide-react";
 
-export default async function SubmissionsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+const DATA_DIR = path.join(process.cwd(), "data", "submissions");
+
+type Submission = {
+  id: string;
+  type: string;
+  fullName: string;
+  email: string;
+  title: string;
+  language: string;
+  journalName: string;
+  price: number;
+  status: string;
+  createdAt: string;
+};
+
+async function loadSubmissions(): Promise<Submission[]> {
+  try {
+    const files = await readdir(DATA_DIR);
+    const results = await Promise.all(
+      files
+        .filter((f) => f.endsWith(".json"))
+        .map(async (f) => {
+          try {
+            const raw = await readFile(path.join(DATA_DIR, f), "utf-8");
+            return JSON.parse(raw) as Submission;
+          } catch {
+            return null;
+          }
+        })
+    );
+    return results
+      .filter((s): s is Submission => s !== null)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch {
+    return [];
+  }
+}
+
+export default async function SubmissionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const sp = await searchParams;
   const statusFilter = typeof sp?.status === "string" ? sp.status : "";
   const typeFilter = typeof sp?.type === "string" ? sp.type : "";
 
-  const submissions = await prisma.submission.findMany({
-    where: {
-      ...(statusFilter ? { status: statusFilter as "waiting_payment" | "published" } : {}),
-      ...(typeFilter ? { type: typeFilter as "own_article" | "editor_service" } : {}),
-    },
-    include: { journal: true },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  }).catch(() => []);
+  const all = await loadSubmissions();
+
+  const submissions = all.filter((s) => {
+    if (statusFilter && s.status !== statusFilter) return false;
+    if (typeFilter && s.type !== typeFilter) return false;
+    return true;
+  });
 
   return (
     <div className="p-6 lg:p-8">
@@ -36,12 +77,12 @@ export default async function SubmissionsPage({ searchParams }: { searchParams: 
         <Filter className="w-4 h-4 text-gray-400" />
         <div className="flex flex-wrap gap-2">
           {[
-            { label: "Барлығы", status: "" },
-            { label: "Төлем күтіліде", status: "waiting_payment" },
+            { label: "Барлығы",           status: "" },
+            { label: "Төлем күтіліде",    status: "waiting_payment" },
             { label: "WhatsApp жіберілді", status: "sent_to_whatsapp" },
-            { label: "Өңделуде", status: "processing" },
-            { label: "Жарияланды", status: "published" },
-            { label: "Болдырылмады", status: "cancelled" },
+            { label: "Өңделуде",          status: "processing" },
+            { label: "Жарияланды",        status: "published" },
+            { label: "Болдырылмады",      status: "cancelled" },
           ].map((f) => (
             <Link
               key={f.status}
@@ -60,7 +101,7 @@ export default async function SubmissionsPage({ searchParams }: { searchParams: 
           {[
             { label: "Барлық түрі", type: "" },
             { label: "Өз мақалалар", type: "own_article" },
-            { label: "Редакция", type: "editor_service" },
+            { label: "Редакция",    type: "editor_service" },
           ].map((f) => (
             <Link
               key={f.type}
@@ -84,7 +125,10 @@ export default async function SubmissionsPage({ searchParams }: { searchParams: 
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 {["Авторы", "Мақала тақырыбы", "Түрі", "Журнал", "Тіл", "Баға", "Статусы", "Күні", ""].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                  <th
+                    key={h}
+                    className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                  >
                     {h}
                   </th>
                 ))}
@@ -108,14 +152,18 @@ export default async function SubmissionsPage({ searchParams }: { searchParams: 
                       <p className="text-gray-800 max-w-xs truncate">{sub.title}</p>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        sub.type === "own_article" ? "bg-blue-100 text-blue-800" : "bg-amber-100 text-amber-800"
-                      }`}>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          sub.type === "own_article"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-amber-100 text-amber-800"
+                        }`}
+                      >
                         {sub.type === "own_article" ? "Өз мақалалар" : "Редакция"}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="text-gray-600 text-xs max-w-32 truncate">{sub.journal.name}</p>
+                      <p className="text-gray-600 text-xs max-w-32 truncate">{sub.journalName}</p>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600">
                       {getLanguageLabel(sub.language)}
@@ -124,7 +172,9 @@ export default async function SubmissionsPage({ searchParams }: { searchParams: 
                       {sub.price.toLocaleString()} тг
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(sub.status)}`}>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(sub.status)}`}
+                      >
                         {getStatusLabel(sub.status)}
                       </span>
                     </td>
@@ -149,4 +199,3 @@ export default async function SubmissionsPage({ searchParams }: { searchParams: 
     </div>
   );
 }
-
